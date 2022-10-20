@@ -71,13 +71,25 @@ section classical
 
     -- Using just em
     example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := 
-      Or.elim (em q) 
-        (λ hq => λ _ => Or.inl (λ _ => hq)) 
-        (λ hnq => λ p_qr => (em r).elim (λ hr => Or.inr (λ _ => hr)) 
-                                        (λ hnr => (Or.inl (λ p => (p_qr p).elim (False.elim ∘ hnq) (False.elim ∘ hnr)))))
+      byCases
+        (λ (hq : q) => λ _ => Or.inl (λ _ => hq)) 
+        (λ (hnq : ¬q) => λ p_qr => 
+           byCases 
+             (λ (hr : r) => Or.inr (λ _ => hr)) 
+             (λ (hnr : ¬r) => (Or.inl (λ p => (p_qr p).elim (False.elim ∘ hnq) (False.elim ∘ hnr)))))
 
-    example : ¬(p ∧ q) → ¬p ∨ ¬q := sorry
-    example : ¬(p → q) → p ∧ ¬q := sorry
+    example : ¬(p ∧ q) → ¬p ∨ ¬q := 
+      byCases 
+        (λ (hp : p) => byCases
+          (λ (hq : q) => λ hnpq => False.elim (hnpq ⟨hp, hq⟩))
+          (λ (hnq : ¬q) => λ _ => Or.inr hnq))
+        (λ (hnp : ¬p) => λ _ => Or.inl hnp)
+
+    example : ¬(p → q) → p ∧ ¬q := 
+      byCases
+        (λ (hp : p) => _)
+        (λ (hnp : ¬p) => _)
+
     example : (p → q) → (¬p ∨ q) := sorry
     example : (¬q → ¬p) → (p → q) := sorry
     example : p ∨ ¬p := sorry
