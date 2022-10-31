@@ -1,4 +1,4 @@
-section
+section Chap3
     variable (p q r : Prop)
 
     -- commutativity of ∧ and ∨
@@ -62,63 +62,113 @@ section
 
     example : (p → q) → (¬q → ¬p) := 
     λ hpq => λ hnq => λ hp => hnq (hpq hp)
-section
+
+    section classical
+        open Classical
+        variable (p q r : Prop)
+
+        example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := 
+        λ p_qr => byCases
+            (λ (hq : q) => Or.inl (λ _ => hq)) 
+            (λ (hnq : ¬q) => byCases 
+            (λ (hr : r) => Or.inr (λ _ => hr)) 
+            (λ (hnr : ¬r) => (Or.inl (λ p => (p_qr p).elim (False.elim ∘ hnq) (False.elim ∘ hnr)))))
+
+        example : ¬(p ∧ q) → ¬p ∨ ¬q := 
+        λ hnpq => byCases 
+            (λ (hp : p) => byCases
+            (λ (hq : q) => False.elim (hnpq ⟨hp, hq⟩))
+            (λ (hnq : ¬q) => Or.inr hnq))
+            (λ (hnp : ¬p) => Or.inl hnp)
+
+        example : ¬(p → q) → p ∧ ¬q := 
+        λ npq => byCases
+            (λ (hq : q) => False.elim (npq (λ _ => hq)))
+            (λ (hnq : ¬q) => byCases 
+            (λ (hp : p) => ⟨hp, hnq⟩)
+            (λ (hnp : ¬p) => False.elim (npq (λ hp => absurd hp hnp))))
+
+        example : (p → q) → (¬p ∨ q) := 
+        λ hpq => byCases 
+            (λ (hq : q) => Or.inr hq)
+            (λ (hnq : ¬q) => byCases 
+            (λ (hp : p) => False.elim (hnq (hpq hp)))
+            (λ (hnp : ¬p) => Or.inl hnp))
+
+        example : (¬q → ¬p) → (p → q) := 
+        λ hnqnp => byCases
+            (λ (hq : q) => λ _ => hq)
+            (λ (hnq : ¬q) => byCases 
+            (λ (hp : p) => False.elim ((hnqnp hnq) hp))
+            (λ (hnp : ¬p) => λ hp => absurd hp hnp))
+
+        example : p ∨ ¬p := byCases
+        (λ (hp : p) => Or.inl hp)
+        (λ (hnp : ¬p) => Or.inr hnp)
+
+        example : (((p → q) → p) → p) := byCases
+        (λ (hp : p) => λ _ => hp)
+        (λ (hnp : ¬p) => λ hpqp => hpqp (λ hp => absurd hp hnp))
+    end classical
+
+    example: ¬(p ↔ ¬p) :=
+    λ h => 
+        have hnp : ¬p := λ hp => (h.mp hp) hp;
+        have hnnp : ¬¬p := λ hnp => hnp (h.mpr hnp);
+        hnnp hnp
+section Chap3
 
 
-section classical
-    open Classical
-    variable (p q r : Prop)
+section Chap4
+open Classical
+variable (α : Type) (p q : α → Prop)
+variable (r : Prop)
 
-    example : (p → q ∨ r) → ((p → q) ∨ (p → r)) := 
-      λ p_qr => byCases
-        (λ (hq : q) => Or.inl (λ _ => hq)) 
-        (λ (hnq : ¬q) => byCases 
-          (λ (hr : r) => Or.inr (λ _ => hr)) 
-          (λ (hnr : ¬r) => (Or.inl (λ p => (p_qr p).elim (False.elim ∘ hnq) (False.elim ∘ hnr)))))
+example : (∃ x : α, r) → r := 
+  λ h => h.elim (λ _ hr => hr)
+  
+example (a : α) : r → (∃ e : α, r) :=
+  λ h1 => ⟨a, h1⟩
+  
+example : (∃ x, p x ∧ r) ↔ (∃ x, p x) ∧ r := 
+  ⟨λ ⟨w, pw, hr⟩ => ⟨⟨w, pw⟩, hr⟩,
+   λ ⟨⟨w, pw⟩, hr⟩ => ⟨w, pw, hr⟩⟩
+   
+example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := 
+  ⟨λ ⟨w, hpqx⟩ => hpqx.elim (λ hpx => Or.inl ⟨w, hpx⟩) (λ hqx => Or.inr ⟨w, hqx⟩), 
+   λ hpq => hpq.elim (λ ⟨w, hpw⟩ => ⟨w, Or.inl hpw⟩) (λ ⟨w, hqw⟩ => ⟨w, Or.inr hqw⟩)⟩
+   
+example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := 
+  ⟨λ h => λ ⟨w, hnpx⟩ => hnpx (h w), 
+   λ h => λ w => byContradiction λ hnpw => h ⟨w, hnpw⟩⟩
+   
+example : (∃ x, p x ) ↔ ¬ (∀ x, ¬ p x) := 
+  ⟨λ ⟨w, hpw⟩ => λ hnp => (hnp w) hpw, 
+   λ h => byContradiction λ (h1 : ¬ ∃ x, p x) =>
+     have (h2 : ∀ x, ¬ p x) := 
+       λ w =>
+       λ h3 : p w => h1 ⟨w, h3⟩
+     h h2⟩
+     
+example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) :=
+  ⟨λ h => byContradiction λ h1 =>
+       have h2 : (∀ x, ¬ p x) :=
+         λ w => λ (h3 : p w) => h ⟨w, h3⟩
+       h1 h2, 
+   λ h => λ ⟨w, h1⟩ => (h w) h1⟩
 
-    example : ¬(p ∧ q) → ¬p ∨ ¬q := 
-      λ hnpq => byCases 
-        (λ (hp : p) => byCases
-          (λ (hq : q) => False.elim (hnpq ⟨hp, hq⟩))
-          (λ (hnq : ¬q) => Or.inr hnq))
-        (λ (hnp : ¬p) => Or.inl hnp)
+example : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
+  ⟨λ h => byContradiction λ h1 => 
+     have h2 : ∀ x, p x := λ w => byContradiction λ hnpw => h1 ⟨w, hnpw⟩
+     h h2, 
+   λ ⟨w, hnpw⟩ => λ h1 => hnpw (h1 w)⟩
+   
+example : (∀ x, p x → r) ↔ (∃ x, p x) → r :=
+  ⟨λ h => λ ⟨w, hpw⟩ => (h w) hpw, 
+   λ h => λ w => λ hpw => h ⟨w, hpw⟩⟩
+   
+example (a : α) : (∃ x, p x → r) ↔ (∀ x, p x) → r := 
+  ⟨λ ⟨w, hpwr⟩ => λ hpx => hpwr (hpx w), 
+   λ h => _⟩
 
-    example : ¬(p → q) → p ∧ ¬q := 
-      λ npq => byCases
-        (λ (hq : q) => False.elim (npq (λ _ => hq)))
-        (λ (hnq : ¬q) => byCases 
-          (λ (hp : p) => ⟨hp, hnq⟩)
-          (λ (hnp : ¬p) => False.elim (npq (λ hp => absurd hp hnp))))
-
-    example : (p → q) → (¬p ∨ q) := 
-      λ hpq => byCases 
-        (λ (hq : q) => Or.inr hq)
-        (λ (hnq : ¬q) => byCases 
-          (λ (hp : p) => False.elim (hnq (hpq hp)))
-          (λ (hnp : ¬p) => Or.inl hnp))
-
-    example : (¬q → ¬p) → (p → q) := 
-      λ hnqnp => byCases
-        (λ (hq : q) => λ _ => hq)
-        (λ (hnq : ¬q) => byCases 
-          (λ (hp : p) => False.elim ((hnqnp hnq) hp))
-          (λ (hnp : ¬p) => λ hp => absurd hp hnp))
-
-    example : p ∨ ¬p := byCases
-      (λ (hp : p) => Or.inl hp)
-      (λ (hnp : ¬p) => Or.inr hnp)
-
-    example : (((p → q) → p) → p) := byCases
-      (λ (hp : p) => λ _ => hp)
-      (λ (hnp : ¬p) => λ hpqp => hpqp (λ hp => absurd hp hnp))
-end classical
-
-section
-variable (p : Prop)
-
-example: ¬(p ↔ ¬p) :=
-  λ h => 
-    have hnp : ¬p := λ hp => (h.mp hp) hp;
-    have hnnp : ¬¬p := λ hnp => hnp (h.mpr hnp);
-    hnnp hnp
-end
+end Chap4
