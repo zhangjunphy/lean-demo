@@ -119,7 +119,7 @@ section Chap3
 section Chap3
 
 
-section Chap4
+section Chap4_5
 open Classical
 variable (α : Type) (p q : α → Prop)
 variable (r : Prop)
@@ -169,6 +169,38 @@ example : (∀ x, p x → r) ↔ (∃ x, p x) → r :=
    
 example (a : α) : (∃ x, p x → r) ↔ (∀ x, p x) → r := 
   ⟨λ ⟨w, hpwr⟩ => λ hpx => hpwr (hpx w), 
-   λ h => _⟩
+   λ h => byCases
+     (λ h': ∀ x, p x => ⟨a, λ _ => h h'⟩)
+     (λ h': ¬ ∀ x, p x => 
+       have ⟨w, hnpw⟩ : ∃ x, ¬ p x := byContradiction λ hnnpx => 
+         have nh' : ∀ x, p x := λ w => byContradiction λ hnpw => hnnpx ⟨w, hnpw⟩
+         h' nh'
+       ⟨w, λ hpw => absurd hpw hnpw⟩)⟩
+       
+example (a : α) : (∃ x, r → p x) ↔ (r → ∃ x, p x) :=
+  ⟨λ ⟨w, hrpw⟩ => λ hr => ⟨w, hrpw hr⟩, 
+   λ hrpx => byCases 
+     (λ h' : ∃ x, p x => 
+       have ⟨w, pw⟩ := h'
+       ⟨w, λ _ => pw⟩)
+     (λ h' : ¬ ∃ x, p x => byCases
+       (λ hr : r  => absurd (hrpx hr) h')
+       (λ hnr : ¬r  => ⟨a, λ hr => absurd hr hnr⟩))⟩
+       
+end Chap4_5
 
-end Chap4
+section Chap4_1
+variable (α : Type) (p q : α → Prop)
+
+example : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) := 
+  ⟨λ hpq => ⟨λ w => (hpq w).left, λ w => (hpq w).right⟩, 
+   λ hphq => λ w => ⟨hphq.left w, hphq.right w⟩⟩
+
+example : (∀ x, p x → q x) → (∀ x, p x) → (∀ x, q x) := λ hpq => λ hp => λ w => (hpq w) (hp w)
+
+example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x := 
+  fun h => Or.elim h
+    (λ hpx => λ w => Or.inl (hpx w))
+    (λ hqx => λ w => Or.inr (hqx w))
+
+end Chap4_1
