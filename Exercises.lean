@@ -202,5 +202,65 @@ example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x :=
   fun h => Or.elim h
     (λ hpx => λ w => Or.inl (hpx w))
     (λ hqx => λ w => Or.inr (hqx w))
-
 end Chap4_1
+
+section Chap4_2
+variable (α : Type) (p q : α → Prop)
+variable (r : Prop)
+
+example : α -> ((∃ x : α, r) ↔ r) := 
+  λ w => Iff.intro
+    (λ ⟨_, hr⟩ => hr)
+    (λ hr => ⟨w, hr⟩)
+    
+open Classical 
+example : (∀ x, p x ∨ r) ↔ (∀ x, p x) ∨ r := 
+  Iff.intro 
+    (λ hpxor => byCases
+      (λ h' : ∀ x, p x => Or.inl h') 
+      (λ h' : ¬ ∀ x, p x => 
+        have ⟨w, hnpw⟩ : ∃ x, ¬ p x := byContradiction 
+          λ hnpx =>
+            have : ∀ x, p x := λ w => byContradiction λ hnpw => hnpx ⟨w, hnpw⟩
+            h' this
+        have hr : r := byContradiction λ hnr => 
+          have : p w := False.elim ((hpxor w).elim hnpw hnr)
+          hnpw this
+        Or.inr hr))
+    (λ hpxor => λ w => 
+      hpxor.elim 
+        (λ hpx => Or.inl (hpx w)) 
+        (λ hr => Or.inr hr))
+
+example : (∀ x, r → p x) ↔ (r → ∀ x, p x) :=
+  Iff.intro
+    (λ hxrpx => λ hr => λ w => hxrpx w hr)
+    (λ hrxpx => λ w => λ hr => hrxpx hr w)
+end Chap4_2
+
+section Chap4_3
+variable (men : Type) (barber : men)
+variable (shaves : men → men → Prop)
+
+-- Who would shave the barber?
+-- Why ↔ instead of ∧?
+example (h : ∀ x : men, shaves barber x ↔ ¬ shaves x x) : False :=
+  have : ¬ ((shaves barber barber) ↔ ¬ shaves barber barber) := 
+    λ h => 
+      have hn : ¬ shaves barber barber := λ h' => h.mp h' h'
+      have hnn : ¬ ¬ shaves barber barber := λ h' => h' (h.mpr h')
+      hnn hn
+  this (h barber)
+end Chap4_3
+
+section Chap4_4
+def even (n : Nat) : Prop := ∃ x : Nat, 2 * x = n
+def prime (n : Nat) : Prop := ¬ ∃ x y : Nat, 1 < x ∧ x < n ∧ 1 < y ∧ y < n ∧ x * y = n
+def infinitely_many_primes : Prop := ∀ k : Nat, ∃ p : Nat, prime p ∧ p > k
+def Fermat_prime (n : Nat) : Prop := ∃ k : Nat, 2^(2^k) + 1 = n
+def infinitely_many_Fermat_primes : Prop := ∀ k : Nat, ∃ p, Fermat_prime p ∧ p > k
+def goldbach_conjecture : Prop := ∀ x : Nat, x > 2 ∧ even x -> (∃ p q, prime p ∧ prime q ∧ x = p + q)
+def Goldbach's_weak_conjecture : Prop := ∀ x : Nat, x > 5 ∧ ¬ even x -> (∃ p q r, prime p ∧ prime q ∧ prime r ∧ x = p + q + r)
+def Fermat's_last_theorem : Prop := ∀ n : Nat, n > 2 -> ¬ (∃ a b c, a > 0 ∧ b > 0 ∧ c > 0 ∧ a^n + b^n = c^n)
+
+end Chap4_4
