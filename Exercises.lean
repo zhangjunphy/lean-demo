@@ -264,3 +264,45 @@ def Goldbach's_weak_conjecture : Prop := ∀ x : Nat, x > 5 ∧ ¬ even x -> (�
 def Fermat's_last_theorem : Prop := ∀ n : Nat, n > 2 -> ¬ (∃ a b c, a > 0 ∧ b > 0 ∧ c > 0 ∧ a^n + b^n = c^n)
 
 end Chap4_4
+
+
+section Chap5_2
+example (p q r : Prop) (hp : p) 
+  : (p ∨ q ∨ r) ∧ (q ∨ p ∨ r) ∧ (q ∨ r ∨ p) := by
+    repeat (constructor; repeat (first | apply Or.inl; assumption | apply Or.inr | assumption))
+end Chap5_2
+
+section Chap5_1
+variable (p q r : Prop)
+
+-- commutativity of ∧ and ∨
+example : p ∧ q ↔ q ∧ p := by
+  apply Iff.intro <;> 
+    (intros h; constructor; (exact h.right; exact h.left))
+
+example : p ∨ q ↔ q ∨ p := by 
+  apply Iff.intro <;>
+    (intro h <;> cases h; (apply Or.inr; assumption; apply Or.inl; assumption))
+
+-- associativity of ∧ and ∨
+example : (p ∧ q) ∧ r ↔ p ∧ (q ∧ r) := sorry
+example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) := sorry
+
+-- distributivity
+example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := sorry
+example : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) := sorry
+
+-- other properties
+example : (p → (q → r)) ↔ (p ∧ q → r) := sorry
+example : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) := sorry
+example : ¬(p ∨ q) ↔ ¬p ∧ ¬q := sorry
+example : ¬p ∨ ¬q → ¬(p ∧ q) := sorry
+example : ¬(p ∧ ¬p) := sorry
+example : p ∧ ¬q → ¬(p → q) := sorry
+example : ¬p → (p → q) := sorry
+example : (¬p ∨ q) → (p → q) := sorry
+example : p ∨ False ↔ p := sorry
+example : p ∧ False ↔ False := sorry
+example : (p → q) → (¬q → ¬p) := sorry
+
+end Chap5_1
