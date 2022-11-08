@@ -275,26 +275,78 @@ end Chap5_2
 section Chap5_1
 variable (p q r : Prop)
 
+syntax "triv_and" : tactic
+macro_rules
+  | `(tactic| triv_and) => `(tactic| repeat (first | constructor | assumption))
+  
+syntax "triv_or_1" (colGt tactic) : tactic
+macro_rules
+  | `(tactic| triv_or_1 $p) => `(tactic| (first | apply Or.inl; $p | apply Or.inr; $p))
+syntax "triv_or'" :tactic
+macro_rules
+  | `(tactic| triv_or') => `(tactic| triv_or_1 assumption)
+syntax "triv_or" (colGt tactic) : tactic 
+macro_rules
+  | `(tactic| triv_or $p) => `(tactic| (first | triv_or_1 $p | apply Or.inl <;> triv_or $p | apply Or.inr <;> triv_or $p))
+
 -- commutativity of ∧ and ∨
 example : p ∧ q ↔ q ∧ p := by
-  apply Iff.intro <;> 
-    (intros h; constructor; (exact h.right; exact h.left))
-
+  apply Iff.intro <;> (intro ⟨_, _⟩; triv_and)
+  
 example : p ∨ q ↔ q ∨ p := by 
-  apply Iff.intro <;>
-    (intro h <;> cases h; (apply Or.inr; assumption; apply Or.inl; assumption))
+  apply Iff.intro <;> intro h <;> cases h <;> (rename_i hp <;> triv_or')
 
 -- associativity of ∧ and ∨
-example : (p ∧ q) ∧ r ↔ p ∧ (q ∧ r) := sorry
-example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) := sorry
+example : (p ∧ q) ∧ r ↔ p ∧ (q ∧ r) := by
+  apply Iff.intro
+  . intro ⟨⟨_, _⟩, _⟩; triv_and
+  . intro ⟨_, _, _⟩; triv_and
+
+example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) := by
+  apply Iff.intro <;> intro h <;> cases h <;> rename_i h' <;> 
+  (first | triv_or (exact h') | cases h' <;> rename_i h'' <;> triv_or (exact h''))
 
 -- distributivity
-example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := sorry
-example : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) := sorry
+example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
+  apply Iff.intro
+  . intro ⟨hp, hqr⟩
+    cases hqr
+    . apply Or.inl; triv_and
+    . apply Or.inr; triv_and
+  . intro h <;> cases h <;> rename_i h' <;> match h' with
+    | ⟨_, _⟩ => constructor <;> (try assumption) <;> (try triv_or')
+    
+example : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) := by
+  apply Iff.intro
+  . intro h
+    (cases h <;> rename_i h' <;> try cases h') <;> constructor <;> triv_or'
+  . intro ⟨hpq, hpr⟩
+    cases hpq 
+    . triv_or'
+    . cases hpr
+      . triv_or'
+      . apply Or.inr; triv_and
 
 -- other properties
-example : (p → (q → r)) ↔ (p ∧ q → r) := sorry
-example : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) := sorry
+example : (p → (q → r)) ↔ (p ∧ q → r) := by
+  apply Iff.intro
+  . intro h
+    intro hpq
+    match hpq with
+    | ⟨hp, hq⟩ => exact h hp hq
+  . intros h hp hq
+    apply h; triv_and
+
+example : ((p ∨ q) → r) ↔ (p → r) ∧ (q → r) := by 
+  apply Iff.intro
+  . intro h
+    constructor <;> intro <;> apply h <;> triv_or'
+  . intro ⟨h1, h2⟩
+    intro hpq
+    cases hpq 
+    . apply h1; assumption
+    . apply h2; assumption
+    
 example : ¬(p ∨ q) ↔ ¬p ∧ ¬q := sorry
 example : ¬p ∨ ¬q → ¬(p ∧ q) := sorry
 example : ¬(p ∧ ¬p) := sorry
