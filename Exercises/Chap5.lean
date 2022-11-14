@@ -326,11 +326,28 @@ example (a : α) : (∃ x, p x → r) ↔ (∀ x, p x) → r := by
   . intro ⟨w, h⟩ h'
     exact h (h' w)
   . intro h
-    by_cases hp: p a
-    . 
-  
-example (a : α) : (∃ x, r → p x) ↔ (r → ∃ x, p x) := sorry
-
+    by_cases hp: (∀ (x : α), p x)
+    . exact ⟨a, λ _ => h hp⟩
+    . have ⟨w, pw⟩: ∃ x, ¬ p x := by
+        by_cases h': ∃ x, ¬ p x
+        . trivial 
+        . suffices ∀ x, p x by contradiction
+          intro v; by_cases hv: p v; 
+          . trivial 
+          . have _: ∃ x, ¬p x := ⟨v, hv⟩ 
+            contradiction
+      exists w
+      intro; contradiction
+      
+example (a : α) : (∃ x, r → p x) ↔ (r → ∃ x, p x) := by
+  apply Iff.intro
+  . intro ⟨w, h⟩ hr
+    exact ⟨w, h hr⟩
+  . intro h
+    by_cases hr: r
+    . let ⟨w, hp⟩ := h hr
+      exists w; intro; trivial
+    . exists a; intro; trivial
 end Chap5_4_4
 
 section Chap5_2
