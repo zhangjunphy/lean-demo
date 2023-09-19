@@ -340,3 +340,29 @@ theorem exp_add : ∀ (a b c : Nat), exp a (add b c) = mul (exp a b) (exp a c)
   | _, 0, _ => by simp [add_zero, zero_add, exp, mul_one, one_mul]
   | a, b+1, c => by simp [succ_add, exp, exp_add a b c, mul_assoc]
 end Hidden
+
+namespace Hidden
+def reverse : List α → List α
+  | [] => []
+  | a::as => (reverse as) ++ [a]
+  
+def reverse_concat : ∀ (l m: List α), reverse (l ++ m) = reverse m ++ reverse l
+  | [], _ => by simp [List.append, reverse]
+  | a::as, bs => by simp [List.cons_append, reverse, 
+                          reverse_concat as bs, List.append_assoc]
+                          
+theorem reverse_reverse : ∀ (l : List α), reverse (reverse l) = l
+  | [] => rfl
+  | a::as => by calc
+     reverse (reverse (a :: as)) = reverse ((reverse as) ++ [a]) := rfl
+     _ = reverse [a] ++ reverse (reverse as) := by simp [reverse_concat]
+     _ = a::as := by simp [reverse, reverse_reverse as] 
+end Hidden
+
+#check @Nat.below
+#check @Nat.brecOn
+#check @WellFounded.fix
+
+variable (C: Nat → Type u)
+#check (@Nat.below C : Nat → Type u)
+#reduce @Nat.below C (3 : Nat)
